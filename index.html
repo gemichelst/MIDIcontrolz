@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MidiControls</title>
+<link rel="stylesheet" href="assets/css/midicontrols.v1.css">
+<link rel="manifest" href="/manifest.json" />
+</head>
+<body>
+<div id="app">
+
+<!-- TOP NAV -->
+<nav id="topnav">
+  <div class="logo">Midi<span>Controls</span></div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPanel('editor')" id="tab-editor">
+      <span class="icon">🎛️</span>Editor
+    </button>
+    <button class="nav-tab" onclick="showPanel('monitor')" id="tab-monitor">
+      <span class="icon">📡</span>Monitor
+    </button>
+    <button class="nav-tab" onclick="showPanel('sysex')" id="tab-sysex">
+      <span class="icon">⚡</span>SysEx
+    </button>
+    <button class="nav-tab" onclick="showPanel('backup')" id="tab-backup">
+      <span class="icon">💾</span>Backup
+    </button>
+    <button class="nav-tab" onclick="showPanel('manager')" id="tab-manager">
+      <span class="icon">🗂️</span>Devices
+    </button>
+    <button class="nav-tab" onclick="showPanel('settings')" id="tab-settings">
+      <span class="icon">⚙️</span>Settings
+    </button>
+  </div>
+  <div class="spacer"></div>
+  <div id="midi-status">
+    <div class="status-dot" id="midi-dot"></div>
+    <span id="midi-status-text">No WebMIDI</span>
+  </div>
+  <div id="port-selects">
+    <select id="sel-in" onchange="connectMidiPorts()">
+      <option value="">— MIDI In —</option>
+    </select>
+    <select id="sel-out" onchange="connectMidiPorts()">
+      <option value="">— MIDI Out —</option>
+    </select>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div id="main">
+
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Devices</div>
+      <div id="device-list"></div>
+      <button class="btn-add-device" onclick="openAddDeviceModal()">
+        ＋ Add / Import Device
+      </button>
+    </div>
+  </div>
+
+  <!-- CONTENT AREA -->
+  <div id="content">
+
+    <!-- EDITOR PANEL -->
+    <div class="panel active" id="panel-editor">
+      <div id="editor-welcome" class="welcome-screen">
+        <div class="big-icon">🎹</div>
+        <h2>Select a device to start editing</h2>
+        <p>Choose a device from the sidebar, connect your MIDI In/Out ports above, then read or write presets to your hardware.</p>
+      </div>
+      <div id="editor-device" style="display:none;"></div>
+    </div>
+
+    <!-- MONITOR PANEL -->
+    <div class="panel" id="panel-monitor">
+      <h2 style="margin-bottom:16px;font-size:1.1rem;">MIDI Monitor</h2>
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+        <button class="btn sm" onclick="clearMonitor()">🗑 Clear</button>
+        <button class="btn sm" id="btn-monitor-pause" onclick="toggleMonitorPause()">⏸ Pause</button>
+        <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;">
+          <input type="checkbox" id="filter-note" checked onchange="renderMonitor()"> Notes
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;">
+          <input type="checkbox" id="filter-cc" checked onchange="renderMonitor()"> CC
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;">
+          <input type="checkbox" id="filter-pc" checked onchange="renderMonitor()"> PC
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;">
+          <input type="checkbox" id="filter-sysex" checked onchange="renderMonitor()"> SysEx
+        </label>
+      </div>
+      <div class="midi-monitor" id="midi-monitor"></div>
+      <div style="margin-top:12px;font-size:0.75rem;color:var(--text3);">
+        <span id="monitor-count">0</span> messages captured
+      </div>
+    </div>
+
+    <!-- SYSEX PANEL -->
+    <div class="panel" id="panel-sysex">
+      <h2 style="margin-bottom:16px;font-size:1.1rem;">SysEx & Raw MIDI</h2>
+      <div class="sysex-area">
+        <h3>Send SysEx Message</h3>
+        <p style="font-size:0.78rem;color:var(--text3);margin-bottom:8px;">Enter hex bytes separated by spaces. F0 … F7</p>
+        <textarea class="hex-input" id="sysex-input" placeholder="F0 00 20 29 02 0A 77 00 F7"></textarea>
+        <div style="display:flex;gap:8px;">
+          <button class="btn primary" onclick="sendSysEx()">▶ Send SysEx</button>
+          <button class="btn" onclick="parseSysExInput()">🔍 Parse</button>
+        </div>
+        <div id="sysex-parse-result" style="margin-top:10px;font-size:0.78rem;color:var(--accent3);font-family:monospace;"></div>
+      </div>
+      <div class="sysex-area">
+        <h3>Send Raw CC / Note</h3>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+          <div>
+            <label style="display:block;font-size:0.75rem;color:var(--text3);margin-bottom:4px;">Type</label>
+            <select id="raw-type" style="background:var(--surface3);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:4px;outline:none;">
+              <option value="cc">CC</option>
+              <option value="note_on">Note On</option>
+              <option value="note_off">Note Off</option>
+              <option value="pc">Program Change</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block;font-size:0.75rem;color:var(--text3);margin-bottom:4px;">Ch</label>
+            <input type="number" id="raw-ch" value="1" min="1" max="16" style="width:50px;background:var(--surface3);border:1px solid var(--border);color:var(--text);padding:5px 6px;border-radius:4px;outline:none;">
+          </div>
+          <div>
+            <label style="display:block;font-size:0.75rem;color:var(--text3);margin-bottom:4px;">Number</label>
+            <input type="number" id="raw-num" value="0" min="0" max="127" style="width:60px;background:var(--surface3);border:1px solid var(--border);color:var(--text);padding:5px 6px;border-radius:4px;outline:none;">
+          </div>
+          <div>
+            <label style="display:block;font-size:0.75rem;color:var(--text3);margin-bottom:4px;">Value</label>
+            <input type="number" id="raw-val" value="127" min="0" max="127" style="width:60px;background:var(--surface3);border:1px solid var(--border);color:var(--text);padding:5px 6px;border-radius:4px;outline:none;">
+          </div>
+          <button class="btn primary" onclick="sendRawMidi()">▶ Send</button>
+        </div>
+      </div>
+      <div class="sysex-area" id="device-sysex-cmds">
+        <h3>Device Quick Commands</h3>
+        <div id="device-quick-cmds-list" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <span style="font-size:0.8rem;color:var(--text3);">Select a device to see device-specific commands.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- BACKUP PANEL -->
+    <div class="panel" id="panel-backup">
+      <h2 style="margin-bottom:8px;font-size:1.1rem;">Backup & Restore</h2>
+      <p style="color:var(--text3);font-size:0.82rem;margin-bottom:16px;">Export all device presets to JSON or restore from a backup file.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;">
+        <button class="btn primary" onclick="backupAll()">⬇ Export All Backups</button>
+        <button class="btn" onclick="document.getElementById('restore-input').click()">⬆ Restore from File</button>
+        <input type="file" id="restore-input" accept=".json" style="display:none" onchange="restoreBackup(event)">
+      </div>
+      <div class="backup-list" id="backup-list"></div>
+    </div>
+
+    <!-- DEVICE MANAGER PANEL -->
+    <div class="panel" id="panel-manager">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <h2 style="font-size:1.1rem;">Device Manager</h2>
+        <div style="display:flex;gap:8px;">
+          <button class="btn primary" onclick="openAddDeviceModal()">＋ Add Device</button>
+          <button class="btn" onclick="importDeviceJSON()">📂 Import JSON</button>
+          <input type="file" id="import-device-input" accept=".json" style="display:none" onchange="handleImportDevice(event)">
+        </div>
+      </div>
+      <div class="device-manager-grid" id="device-manager-grid"></div>
+    </div>
+
+    <!-- SETTINGS PANEL -->
+    <div class="panel" id="panel-settings">
+      <h2 style="margin-bottom:16px;font-size:1.1rem;">Settings</h2>
+      <div class="settings-grid">
+        <div class="settings-card">
+          <h3>🎛 MIDI Behavior</h3>
+          <div class="toggle-row">
+            <span>MIDI Thru (echo input to output)</span>
+            <div class="toggle" id="tog-thru" onclick="toggleSetting('thru')"></div>
+          </div>
+          <div class="toggle-row">
+            <span>Highlight on incoming message</span>
+            <div class="toggle on" id="tog-highlight" onclick="toggleSetting('highlight')"></div>
+          </div>
+          <div class="toggle-row">
+            <span>Auto-refresh ports</span>
+            <div class="toggle on" id="tog-autorefresh" onclick="toggleSetting('autorefresh')"></div>
+          </div>
+        </div>
+        <div class="settings-card">
+          <h3>🖥 Display</h3>
+          <div class="toggle-row">
+            <span>Show note names (C4, D#3…)</span>
+            <div class="toggle on" id="tog-notenames" onclick="toggleSetting('notenames')"></div>
+          </div>
+          <div class="toggle-row">
+            <span>Show CC hex values</span>
+            <div class="toggle" id="tog-hex" onclick="toggleSetting('hex')"></div>
+          </div>
+          <div class="toggle-row">
+            <span>Compact mode</span>
+            <div class="toggle" id="tog-compact" onclick="toggleSetting('compact')"></div>
+          </div>
+        </div>
+        <div class="settings-card">
+          <h3>💾 Storage</h3>
+          <div style="font-size:0.82rem;color:var(--text2);line-height:1.8;">
+            All device configs and presets are stored in <strong>localStorage</strong>.<br>
+            Use Backup panel to export/import.
+          </div>
+          <button class="btn danger sm" style="margin-top:12px;" onclick="clearAllData()">🗑 Clear All Data</button>
+        </div>
+        <div class="settings-card">
+          <h3>ℹ About</h3>
+          <div style="font-size:0.82rem;color:var(--text2);line-height:1.9;">
+            <strong>MidiControls</strong> v1.0.0<br>
+            WebMIDI API · No backend · No install<br>
+            Device configs: JSON templates<br>
+            © 2026 — Open Source
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /app -->
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModalOutside(event)">
+  <div class="modal" id="modal">
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div id="toast-container"></div>
+
+<script type="text/javascript" src="assets/js/midicontrols.v2.js"></script>
+</body>
+</html>
