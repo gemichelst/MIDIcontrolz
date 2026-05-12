@@ -10,7 +10,7 @@ and back up everything to JSON. Runs entirely in the browser via the WebMIDI API
 ## Quickstart
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/midicontrols.git
+git clone https://github.com/gemichelst/midicontrols.git
 cd midicontrols
 npx serve .
 ```
