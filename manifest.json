@@ -5,18 +5,18 @@
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "orientation": "landscape-primary",
+  "orientation": "any",
   "background_color": "#0d0f14",
   "theme_color": "#6c63ff",
+  "prefer_related_applications": false,
   "categories": ["music", "utilities", "productivity"],
   "lang": "en",
   "icons": [
     { "src": "assets/icon-72.png",  "sizes": "72x72",   "type": "image/png" },
     { "src": "assets/icon-96.png",  "sizes": "96x96",   "type": "image/png" },
-    { "src": "assets/icon-128.png", "sizes": "128x128", "type": "image/png", "purpose": "any" },
     { "src": "assets/icon-144.png", "sizes": "144x144", "type": "image/png" },
     { "src": "assets/icon-152.png", "sizes": "152x152", "type": "image/png" },
-    { "src": "assets/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "assets/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ],
   "screenshots": [
@@ -31,14 +31,12 @@
     {
       "name": "MIDI Monitor",
       "short_name": "Monitor",
-      "description": "Open the real-time MIDI monitor",
       "url": "/?panel=monitor",
       "icons": [{ "src": "assets/icon-96.png", "sizes": "96x96" }]
     },
     {
       "name": "SysEx Panel",
       "short_name": "SysEx",
-      "description": "Send SysEx and raw MIDI messages",
       "url": "/?panel=sysex",
       "icons": [{ "src": "assets/icon-96.png", "sizes": "96x96" }]
     }
