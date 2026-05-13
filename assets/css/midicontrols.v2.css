@@ -567,6 +567,7 @@ input, select, textarea { font-family: inherit; }
 }
 
 .device-select-wrap {
+  /* display: contents; */
   position: relative;
 }
 
@@ -845,6 +846,7 @@ input, select, textarea { font-family: inherit; }
   #topnav {
     padding: 8px 10px;
     gap: 8px;
+    height: auto;
   }
 
   .logo {

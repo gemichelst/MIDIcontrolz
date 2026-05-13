@@ -100,26 +100,7 @@ function hidePwaBannerAndButtons() {
   if (btnS) btnS.setAttribute('hidden', '');
 }
 
-// ── Device dropdown sync ─────────────────────────────────────
-// Call this after loadDevices() populates State.devices
-function populateDeviceDropdown() {
-  const sel = document.getElementById('device-select');
-  if (!sel) return;
-  const current = sel.value;
-  sel.innerHTML = '<option value="">— Select Device —</option>';
-  State.devices.forEach(dev => {
-    const opt = document.createElement('option');
-    opt.value       = dev.id;
-    opt.textContent = `${dev.icon || '🎹'} ${dev.name}`;
-    if (dev.id === current || dev.id === State.activeDeviceId) opt.selected = true;
-    sel.appendChild(opt);
-  });
-}
 
-function onDeviceSelectChange(id) {
-  if (!id) return;
-  selectDevice(id);
-}
 
 'use strict';
 
@@ -183,8 +164,14 @@ const save = saveState; // alias
 //  LOAD DEVICES — async fetch from devices/FOLDER/device.json
 // ============================================================
 async function loadDevices() {
-  document.getElementById('device-list').innerHTML =
-    '<div style="padding:8px 12px;font-size:0.75rem;color:var(--text3);">Loading devices…</div>';
+  // document.getElementById('device-list').innerHTML =
+  //   '<div style="padding:8px 12px;font-size:0.75rem;color:var(--text3);">Loading devices…</div>';
+  // const container = document.getElementById('device-list');
+  // if (!container) {
+  //   console.warn('[loadDevices] #device-list not found in DOM yet');
+  //   return;
+  // }
+  // container.innerHTML = buildDeviceHTML(); // your existing logic
 
   const fetches = DEVICE_MANIFEST.map(async folder => {
     try {
@@ -248,6 +235,27 @@ function showNoDevicesWarning() {
       Then open <strong>http://localhost:8080</strong><br><br>
       Or drag &amp; drop a <code>device.json</code> onto this page to import directly.
     </p>`;
+}
+
+// ── Device dropdown sync ─────────────────────────────────────
+// Call this after loadDevices() populates State.devices
+function populateDeviceDropdown() {
+  const sel = document.getElementById('device-select');
+  if (!sel) return;
+  const current = sel.value;
+  sel.innerHTML = '<option value="">— Select Device —</option>';
+  State.devices.forEach(dev => {
+    const opt = document.createElement('option');
+    opt.value       = dev.id;
+    opt.textContent = `${dev.icon || '🎹'} ${dev.name}`;
+    if (dev.id === current || dev.id === State.activeDeviceId) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+function onDeviceSelectChange(id) {
+  if (!id) return;
+  selectDevice(id);
 }
 
 // ============================================================
@@ -1577,4 +1585,8 @@ async function init() {
   if (State.devices.length) selectDevice(State.devices[0].id);
 }
 
-init();
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init(); // DOM already parsed (e.g. script is at bottom of <body>)
+}
